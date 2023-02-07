@@ -5,9 +5,8 @@
 
         <div class="d-flex align-center">
           <router-link to="/"> </router-link>
-          <v-img alt="Vuetify Logo" class="shrink mr-2" contain
-          :src="require('../assets/teddy-bear-dark.svg')" transition="scale-transition"
-            width="40" />
+          <v-img alt="Vuetify Logo" class="shrink mr-2" contain :src="require('../assets/teddy-bear-dark.svg')"
+            transition="scale-transition" width="40" />
           <h3>Bank of Duck Bear</h3>
         </div>
       </v-col>
@@ -62,8 +61,8 @@
         <v-row>
           <v-col>
             <template class="pt-mu-10">
-              <v-data-table loading="dataLoading" :headers="headers" :items="results" :sort-by="['telegraphic_transfer_bank_buy']"
-                class=" elevation-1">
+              <v-data-table loading="dataLoading" :headers="headers" :items="results"
+                :sort-by="['telegraphic_transfer_bank_buy']" class=" elevation-1">
                 <template v-slot:[`item.telegraphic_transfer_bank_buy`]="{ item }">
                   {{ formatFloat(item.telegraphic_transfer_bank_buy) || 'N/A' }}
                   <!-- <v-chip :color="getColor(item.telegraphic_transfer_bank_buy)" dark>
@@ -82,6 +81,9 @@
                 <template v-slot:[`item.last_updated`]="{ item }">
                   {{ pickDate(item.last_updated )|| 'N/A' }}
                 </template>
+                <template v-slot:[`item.actions`]="{ item }">
+                  <v-btn outlined v-if="item.key != 'bodb'" @click="update(item.key)">Update</v-btn>
+                </template>
               </v-data-table>
             </template>
           </v-col>
@@ -95,7 +97,17 @@
         <v-icon>mdi-home</v-icon>
       </v-btn>
     </v-fab-transition>
+    <v-snackbar v-model="snackbar" timeout=2000>
+      Your update request received.
+
+      <template v-slot:action="{ attrs }">
+        <v-btn color="blue" text v-bind="attrs" @click="snackbar = false">
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
+  
 </template>
 
 <script>
@@ -108,20 +120,20 @@ export default {
   created() {
     this.ccy = this.$route.query.ccy || this.ccy;
     this.baseCcy = this.$route.query.base_ccy || this.baseCcy;
-    Axios.get("http://192.168.3.11:8081/base_ccys").then((res) => {
+    Axios.get("http://47.115.201.81:8081/base_ccys").then((res) => {
       this.baseCcys = res.data;
     });
-    Axios.get("http://192.168.3.11:8081/ccys").then((res) => {
+    Axios.get("http://47.115.201.81:8081/ccys").then((res) => {
       this.ccys = res.data;
       var index = this.ccys.indexOf(this.baseCcy);
       if (index > -1) {
         this.ccys.splice(index, 1);
       }
     });
-    Axios.get("http://192.168.3.11:8081/rate?base_currency=" + this.baseCcy + "&currency=" + this.ccy).then((res) => {
+    Axios.get("http://47.115.201.81:8081/rate?base_currency=" + this.baseCcy + "&currency=" + this.ccy).then((res) => {
       this.results = [];
       for (var key in res.data) {
-        this.results.push({ 'name': this.banks[key].name, ...res.data[key] })
+        this.results.push({ 'name': this.banks[key].name, 'actions': 1, ...res.data[key], 'key': key })
       }
       this.dataLoading = false;
     });
@@ -149,6 +161,7 @@ export default {
   },
 
   data: () => ({
+    snackbar: false,
     dataLoading: true,
     isShow: true,
     screenWidth: 0,
@@ -167,7 +180,8 @@ export default {
       { text: 'TT Sell', value: 'telegraphic_transfer_bank_sell' },
       { text: 'Note Buy', value: 'banknotes_bank_buy' },
       { text: 'Note Sell', value: 'banknotes_bank_sell' },
-      { text: 'Last Updated', value: 'last_updated', sortable: false}
+      { text: 'Last Updated', value: 'last_updated', sortable: false },
+      { text: 'Feeling data out-dated?', value: 'actions', sortable: false },
     ],
     results: [],
     banks: {
@@ -221,6 +235,14 @@ export default {
       this.$router.push({
         path: '/',
       })
+    },
+    update(bank) {
+      this.snackbar = true;
+      Axios.post("http://47.115.201.81:8081/rate/update", {
+        base_currency: this.baseCcy,
+        currency: this.ccy,
+        bank: bank
+      }).then();
     }
   },
 };

@@ -69,7 +69,7 @@
       <v-container>
         <v-card>
           <v-card-title>
-            Historical Rate against {{ baseCcy }} (last 7 days)
+            Historical ER against {{ baseCcy }} (last 7 days)
           </v-card-title>
           <v-card-text center class="d-flex flex-wrap">
             <TrendPanel v-for="(val, key) in history.rate" :key="key" :ccy="key" :date="history.date[key]" :rate="val" class="pa-ma-16" />
@@ -104,10 +104,10 @@ export default {
   },
 
   created() {
-    Axios.get("http://192.168.3.11:8081/base_ccys").then((res) => {
+    Axios.get("http://47.115.201.81:8081/base_ccys").then((res) => {
       this.baseCcys = res.data;
     });
-    Axios.get("http://192.168.3.11:8081/ccys").then((res) => {
+    Axios.get("http://47.115.201.81:8081/ccys").then((res) => {
       this.ccys = res.data;
       var index = this.ccys.indexOf(this.baseCcy);
       if (index > -1) {
@@ -153,7 +153,7 @@ export default {
       })
     },
     getHistory() {
-      Axios.get("http://192.168.3.11:8081/history").then((res) => {
+      Axios.get("http://47.115.201.81:8081/history").then((res) => {
         this.history = res.data;
         eval('delete this.history.rate.' + this.baseCcy);
       });
